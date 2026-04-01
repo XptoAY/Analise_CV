@@ -4,10 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Análise de CV by XptoAY - Privacidade Máxima</title>
-    <!-- Tailwind CSS para design responsivo -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <!-- PDF.js para extração de texto local -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
     <style>
         body { font-family: 'Inter', sans-serif; background-color: #f0fdf4; }
@@ -31,15 +29,16 @@
     <div class="max-w-4xl mx-auto flex flex-col min-h-[95vh]">
         
         <header class="text-center mb-3 flex flex-col items-center">
-            <div class="flex items-center justify-center gap-2 mb-1 flex-wrap">
+            <div class="flex items-center justify-center gap-3 mb-1 flex-wrap">
                 <h1 class="text-xl md:text-2xl font-bold text-gray-800 tracking-tight flex items-center flex-wrap justify-center gap-x-2">
                     <span>Análise de CV</span>
                     <span class="text-blue-900 font-bold text-lg">by XptoAY</span>
                 </h1>
+                <img src="Logo_XptoAY.png" alt="Logo XptoAY" class="h-8 md:h-10 w-auto object-contain">
             </div>
             <div class="flex items-center gap-1.5 justify-center bg-blue-50 text-blue-700 px-3 py-0.5 rounded-full text-[10px] font-bold border border-blue-100 uppercase tracking-wide">
                 <svg xmlns="http://www.w3.org/2000/svg" class="w-2.5 h-2.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-                Privacidade Reforçada v8.2 
+                Privacidade Reforçada v8.3 (Branding)
             </div>
         </header>
 
@@ -146,8 +145,8 @@
         </main>
 
         <footer class="text-center pb-4 pt-2">
-            <p class="text-[10px] text-gray-400 font-medium tracking-widest">
-                &copy; 2026 Todos os direitos reservados - <span class="text-blue-900 font-bold">XptoAY</span>
+            <p class="text-[10px] text-gray-400 font-medium uppercase tracking-widest">
+                &copy; 2024 - <span class="text-blue-900 font-bold">XptoAY</span>
             </p>
         </footer>
     </div>
@@ -205,59 +204,33 @@
             setTimeout(() => toast.remove(), 3000);
         }
 
-        // Lógica de Anonimização Ultra-Resiliente v8.2
         function sanitizeText(text, filename) {
             if (!text) return "";
-            
-            // 1. Normalização de Espaços (Essencial para PDFs com caracteres soltos)
-            // Remove espaços duplos ou triplos mantendo o sentido das palavras
             let clean = text.replace(/[\u00AD\u200B\u200C\u200D\uFEFF]/g, '');
-            
-            // 2. Ocultar Nome com base no Arquivo
-            const nameTokens = filename
-                .replace(/\.pdf$/i, '')
-                .split(/[^a-zA-Záàâãéèêíïóôõöúçñ]/gi)
-                .map(t => t.trim())
-                .filter(t => t.length > 2 && !/cv|curr[ií]culo|vaga|resumo/i.test(t));
-
+            const nameTokens = filename.replace(/\.pdf$/i, '').split(/[^a-zA-Záàâãéèêíïóôõöúçñ]/gi).map(t => t.trim()).filter(t => t.length > 2 && !/cv|curr[ií]culo|vaga|resumo/i.test(t));
             nameTokens.forEach(token => {
                 const dynamicRegex = new RegExp(`\\b${token}\\b`, 'gi');
                 clean = clean.replace(dynamicRegex, "[NOME OCULTADO]");
             });
-
-            // 3. REGEX DE TELEFONE "ESPACIAL" - Capta ( 11 ) 9999 - 9999 e variações
-            // Explicação: \s* permite espaços arbitrários entre os dígitos e símbolos
             const spatialPhoneRegex = /(?:\+?\s*5\s*5)?\s*\(?\s*\d\s*\d\s*\)?\s*\d?\s*\d\s*\d\s*\d\s*[\s.-]?\s*\d\s*\d\s*\d\s*\d/g;
             clean = clean.replace(spatialPhoneRegex, "[TELEFONE OCULTADO]");
-
-            // 4. E-mails (também tolerante a espaços antes/depois do @ e pontos)
             const spatialEmailRegex = /[a-zA-Z0-9._%+-]+\s*@\s*[a-zA-Z0-9.-]+\s*\.\s*[a-zA-Z]{2,}/gi;
             clean = clean.replace(spatialEmailRegex, "[E-MAIL OCULTADO]");
-
-            // 5. Endereços e Documentos
             clean = clean.replace(/(?:Rua|Avenida|Av\.|Alameda|Travessa|Praça|CEP|Morada|Localização)\s*:?\s*[^,.\n]+/gi, "[ENDEREÇO OCULTADO]");
             clean = clean.replace(/\d\s*\d\s*\d\s*\.\s*\d\s*\d\s*\d\s*\.\s*\d\s*\d\s*\d\s*-\s*\d\s*\d/g, "[CPF OCULTADO]");
             clean = clean.replace(/(?:linkedin\.com\/in\/|github\.com\/)[a-zA-Z0-9-._%]+/gi, "[SOCIAL OCULTADO]");
-
-            // 6. Limpeza de "restos" de números longos (8 a 11 dígitos picados ou não)
-            // Pega sequências de números que sobraram
             clean = clean.replace(/\b(?:\d\s*){8,12}\b/g, "[NÚMERO OCULTADO]");
-
-            // 7. Filtro de Cabeçalho (identidade)
             let lines = clean.split('\n').map(l => l.trim()).filter(l => l.length > 0);
             const sectionKeywords = /objetivo|experiência|formação|educação|habilidades|competências|contato|resumo|perfil/i;
-
             let hCount = 0;
             for(let i=0; i < Math.min(lines.length, 8); i++) {
-                // Se a linha é curta e não é um título, é provável que seja cabeçalho pessoal
                 if (!sectionKeywords.test(lines[i]) && lines[i].split(/\s+/).length < 5) {
-                    lines[i] = "[DADO PESSOAL OCULTADO]";
+                    lines[i] = "[DADO PESSOAL OCULTADA]";
                     hCount++;
                     if (hCount >= 3) break;
                 }
             }
-            
-            return lines.join('\n').replace(/\s{2,}/g, ' '); // Limpa espaços excessivos no final
+            return lines.join('\n').replace(/\s{2,}/g, ' ');
         }
 
         async function extractTextFromPDF(data, filename) {
@@ -267,7 +240,6 @@
             for (let i = 1; i <= pdf.numPages; i++) {
                 const page = await pdf.getPage(i);
                 const content = await page.getTextContent();
-                // Importante: Manter a estrutura de itens para preservar espaços que o PDF gera
                 fullText += content.items.map(item => item.str).join(" ") + "\n";
             }
             return sanitizeText(fullText, filename);
@@ -288,7 +260,7 @@
                     const cleanText = await extractTextFromPDF(typedarray, currentFilename);
                     els.cvText.value = cleanText;
                     els.importBtnText.innerText = "PDF Pronto";
-                    showToast('CV anonimizado (Filtro v8.2)');
+                    showToast('CV anonimizado com sucesso.');
                 };
                 reader.readAsArrayBuffer(file);
             } catch (err) {
@@ -304,11 +276,9 @@
             const cv = els.cvText.value.trim();
             if (!apiKey) { showToast("Chave ausente!", "error"); return; }
             if (!job || !cv) { showToast('Dados incompletos.', "error"); return; }
-
             setLoading(true);
-            const system = `Aja como um Recrutador. Analise o CV vs Vaga. JSON: { "score": 0, "strengths": [], "gaps": [], "tips": [], "summary": "" }.`;
+            const system = `Aja como um Recrutador Especialista. Analise o CV vs Vaga. JSON: { "score": 0, "strengths": [], "gaps": [], "tips": [], "summary": "" }.`;
             const prompt = `VAGA:\n${job}\n\nCV:\n${cv}`;
-            
             try {
                 const res = await callGemini(system, prompt);
                 const result = { name: currentFilename, score: res.score, details: res, id: Date.now() };
