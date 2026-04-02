@@ -20,6 +20,17 @@
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         .animate-fade-in { animation: fadeIn 0.5s ease-out forwards; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        /* Fallback para logo caso a imagem falhe */
+        .logo-fallback {
+            display: none;
+            background: #1e3a8a;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 14px;
+        }
     </style>
 </head>
 <body class="min-h-screen p-2 md:p-4">
@@ -37,14 +48,15 @@
                     </h1>
                     <div class="flex items-center gap-1.5 bg-green-50 text-green-700 px-3 py-0.5 rounded-full text-[10px] font-bold border border-green-100 uppercase tracking-wide mt-1">
                         <svg xmlns="http://www.w3.org/2000/svg" class="w-2.5 h-2.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                        v2.5.7 - Quota management
+                        v2.5.9 - Custom Logo PNG
                     </div>
                 </div>
                 
-                <div class="flex-shrink-0">
-                    <div class="h-12 md:h-16 w-32 bg-gray-100 rounded flex items-center justify-center text-[10px] text-gray-400 font-bold italic border border-dashed border-gray-300">
-                        Logo XptoAY
-                    </div>
+                <!-- Logo XptoAY configurado para usar o arquivo PNG -->
+                <div class="flex-shrink-0 flex flex-col items-end">
+                    <img src="Logo XptoAY.png" alt="Logo XptoAY" class="h-12 md:h-14 w-auto object-contain drop-shadow-sm" onerror="this.style.display='none'; document.getElementById('logo-text-fallback').style.display='block';">
+                    <div id="logo-text-fallback" class="logo-fallback">XptoAY</div>
+                    <span class="text-[8px] text-gray-400 mt-1 uppercase font-bold tracking-tighter">Inteligência em Recrutamento</span>
                 </div>
             </div>
         </header>
@@ -162,7 +174,7 @@
 
         <footer class="text-center pb-4 pt-2">
             <p class="text-[10px] text-gray-400 font-medium">
-                &copy; 2026 Todos os direitos reservados - <span class="text-blue-900 font-bold">XptoAY</span> | Versão Estável API
+                &copy; 2026 - <span class="text-blue-900 font-bold">XptoAY</span> | Inteligência em Recrutamento
             </p>
         </footer>
     </div>
@@ -230,7 +242,6 @@
             clean = clean.replace(/(\+?\d{1,4}\s?)?(\(?\d{2,3}\)?\s?)?(\d{4,5}[-\s]?\d{4})/g, "[TELEFONE]");
             clean = clean.replace(/linkedin\.com\/in\/[a-zA-Z0-9-]+/gi, "linkedin.com/in/[PERFIL]");
             
-            // Reduzir tamanho para economizar tokens
             return clean.substring(0, 10000).trim();
         }
 
@@ -245,7 +256,7 @@
                     const data = new Uint8Array(this.result);
                     const pdf = await pdfjsLib.getDocument({ data }).promise;
                     let text = "";
-                    for (let i = 1; i <= Math.min(pdf.numPages, 10); i++) { // Limitar a 10 páginas para evitar estouro de tokens
+                    for (let i = 1; i <= Math.min(pdf.numPages, 10); i++) {
                         const page = await pdf.getPage(i);
                         const content = await page.getTextContent();
                         text += content.items.map(s => s.str).join(" ") + "\n";
@@ -280,7 +291,7 @@
 
                 if (!response.ok) {
                     if (response.status === 429) {
-                        throw new Error("Limite de cota excedido (Quota Exceeded). Aguarde 30 segundos.");
+                        throw new Error("Limite de cota excedido. Aguarde alguns instantes.");
                     }
                     if (retries > 0 && response.status >= 500) {
                         await new Promise(resolve => setTimeout(resolve, delay));
@@ -294,7 +305,7 @@
                 return JSON.parse(textResult);
 
             } catch (err) {
-                if (retries > 0 && !err.message.includes("Quota")) {
+                if (retries > 0 && !err.message.includes("cota")) {
                     await new Promise(resolve => setTimeout(resolve, delay));
                     return fetchGemini(prompt, currentKey, retries - 1, delay * 2);
                 }
