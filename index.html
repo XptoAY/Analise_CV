@@ -65,7 +65,10 @@
             <div class="bg-white rounded-xl shadow-sm border border-green-100 p-3">
                 <div class="flex justify-between items-center mb-2">
                     <h2 class="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Ranking de Candidatos</h2>
-                    <button onclick="clearHistory()" class="text-[9px] text-red-400 hover:text-red-600 font-bold uppercase">Limpar Tudo</button>
+                    <div class="flex gap-3">
+                        <button onclick="exportToCSV()" class="text-[9px] text-blue-600 hover:text-blue-800 font-bold uppercase">Exportar CSV</button>
+                        <button onclick="clearHistory()" class="text-[9px] text-red-400 hover:text-red-600 font-bold uppercase">Limpar Tudo</button>
+                    </div>
                 </div>
                 <div class="overflow-x-auto">
                     <table class="w-full text-left">
@@ -240,6 +243,24 @@
                 els.result.classList.add('hidden');
                 document.getElementById('ranking-section').classList.add('hidden');
             }
+        };
+
+        window.exportToCSV = () => {
+            if (history.length === 0) return;
+            
+            let csvContent = "data:text/csv;charset=utf-8,ID,Candidato,Score%\n";
+            history.forEach(item => {
+                csvContent += `${item.id},"${item.name}",${item.score}\n`;
+            });
+            
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", `ranking_candidatos_${new Date().toISOString().split('T')[0]}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            showToast("Ranking exportado com sucesso!");
         };
 
         function renderRanking() {
