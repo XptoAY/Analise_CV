@@ -54,14 +54,19 @@
                 </div>
             </div>
             <h2 class="text-2xl font-bold text-gray-800 mb-2">Acesso Restrito</h2>
-            <p class="text-sm text-gray-500 mb-6">Insira a chave fornecida pela <span class="font-bold text-blue-900 text-xs uppercase tracking-tighter">XptoAY</span>.</p>
+            <p class="text-sm text-gray-500 mb-2">Insira a chave fornecida pela <span class="font-bold text-blue-900 text-xs uppercase tracking-tighter">XptoAY</span>.</p>
+            
+            <!-- NOVA INSTRUÇÃO DE DEVICE ID PARA EVITAR COMPARTILHAMENTO DE CHAVE -->
+            <p class="text-[10px] text-gray-400 mb-6 font-bold uppercase bg-gray-50 p-2 rounded-lg border border-gray-100">
+                Seu ID de Dispositivo: <span id="display-device-id" class="text-blue-900 select-all text-xs font-black"></span>
+            </p>
             
             <input type="text" id="license-key-input" class="w-full p-4 border-2 border-gray-100 rounded-xl mb-4 text-center font-mono text-sm focus:border-blue-900 outline-none transition-all uppercase tracking-widest" placeholder="XPTO-XXXX-XXXX">
             
             <button id="activate-btn" class="w-full bg-blue-900 hover:bg-black text-white font-bold py-4 rounded-xl shadow-lg transition-all mb-4">
                 ATIVAR SISTEMA
             </button>
-            <p id="license-error" class="text-red-500 text-[10px] mb-4 font-bold hidden uppercase italic">Licença Inválida.</p>
+            <p id="license-error" class="text-red-500 text-[10px] mb-4 font-bold hidden uppercase italic">Licença Inválida ou em uso em outro dispositivo.</p>
 
             <!-- PAINEL ADMIN: Invisível, usado para gerenciar novas chaves -->
             <div id="admin-panel" class="hidden mt-4 pt-6 border-t border-gray-100 text-left bg-gray-50 -mx-8 px-8 pb-4">
@@ -71,9 +76,13 @@
                     <button id="verify-salt-btn" class="w-full bg-gray-800 text-white text-[10px] font-bold py-2 rounded-lg uppercase">Validar Salt</button>
                 </div>
                 <div id="generator-controls" class="hidden space-y-3 mt-4">
-                    <div class="flex gap-2">
-                        <input type="text" id="new-user-id" class="flex-grow p-2 border rounded-lg text-xs outline-none focus:border-blue-900 uppercase" placeholder="ID CLIENTE">
-                        <button id="generate-key-btn" class="bg-blue-900 text-white px-3 py-2 rounded-lg text-[10px] font-bold uppercase">Gerar</button>
+                    <div class="flex flex-col gap-2">
+                        <div class="flex gap-2">
+                            <input type="text" id="new-user-id" class="w-1/2 p-2 border rounded-lg text-xs outline-none focus:border-blue-900 uppercase" placeholder="ID CLIENTE">
+                            <!-- NOVO CAMPO DE DEVICE ID NO GERADOR -->
+                            <input type="text" id="new-user-device" class="w-1/2 p-2 border rounded-lg text-xs outline-none focus:border-blue-900 uppercase" placeholder="ID DISPOSITIVO (Opcional)">
+                        </div>
+                        <button id="generate-key-btn" class="bg-blue-900 text-white px-3 py-2 rounded-lg text-[10px] font-bold uppercase w-full">Gerar Chave</button>
                     </div>
                     <div id="generated-key-display" class="p-3 bg-white rounded-lg border border-dashed border-blue-200 hidden">
                         <div class="flex items-center justify-between">
@@ -118,6 +127,8 @@
                         Aguardando API Key...
                     </div>
                 </div>
+                <!-- LOGO XPTOAY ADICIONADO AQUI -->
+                <img src="Logo_XptoAY_red.jpg" alt="Logo XptoAY" class="h-12 w-12 md:h-14 md:w-14 rounded-full shadow-md border-2 border-white object-cover">
             </div>
         </header>
 
@@ -194,13 +205,14 @@
                 </div>
             </section>
         </main>
-
+        
+        
         <footer class="text-center pb-4 pt-2">
             <p class="text-[10px] text-gray-400 font-medium tracking-widest">
                 &copy; 2026 - Todos os direitos reservados para <span class="text-blue-900 font-bold">XptoAY</span>
             </p>
         </footer>
-        
+
         <!-- PAINEL DE RANKING: Histórico de análises da sessão -->
         <div id="ranking-panel" class="bg-white rounded-2xl shadow-md border border-gray-100 overflow-hidden hidden animate-fade-in">
             <div class="bg-gray-50 px-4 py-2 flex items-center justify-between border-b">
@@ -212,8 +224,22 @@
     </div>
 
     <script>
+        /** * GERAÇÃO E RECUPERAÇÃO DE DEVICE ID
+         * Cria um ID único para este navegador, usado para atrelar licenças a uma máquina específica.
+         */
+        const getDeviceId = () => {
+            let did = localStorage.getItem('xptoay_device_id');
+            if (!did) {
+                did = Math.random().toString(36).substring(2, 8).toUpperCase();
+                localStorage.setItem('xptoay_device_id', did);
+            }
+            return did;
+        };
+        const DEVICE_ID = getDeviceId();
+
         /** * LÓGICA DE SEGURANÇA E LICENCIAMENTO
-         * Gerencia a validação da chave XPTO- baseada em HMAC para evitar acessos não autorizados.
+         * Gerencia a validação da chave XPTO- baseada em HMAC.
+         * Suporta chaves "Universais" e chaves "Amarradas ao Device".
          */
         const SECURITY = {
             EXPECTED_SALT: 'XPTOAY_BITOCA_2026',
@@ -224,8 +250,12 @@
                 if (parts.length !== 3) return false;
                 const userId = parts[1];
                 const providedHash = parts[2];
-                const expectedHash = CryptoJS.HmacSHA256(userId, SECURITY.EXPECTED_SALT).toString().substring(0, 8).toUpperCase();
-                return providedHash === expectedHash;
+                
+                // Valida tanto chave amarrada ao dispositivo atual, quanto chave universal (sem device ID)
+                const expectedHashDevice = CryptoJS.HmacSHA256(userId + "-" + DEVICE_ID, SECURITY.EXPECTED_SALT).toString().substring(0, 8).toUpperCase();
+                const expectedHashUniversal = CryptoJS.HmacSHA256(userId, SECURITY.EXPECTED_SALT).toString().substring(0, 8).toUpperCase();
+                
+                return providedHash === expectedHashDevice || providedHash === expectedHashUniversal;
             }
         };
 
@@ -240,12 +270,19 @@
         
         // Inicialização: Carrega PDF workers e verifica licença/API salva
         window.addEventListener('load', () => {
+            // Exibe o Device ID na tela de bloqueio
+            document.getElementById('display-device-id').innerText = DEVICE_ID;
+
             if (typeof pdfjsLib !== 'undefined') {
                 pdfjsLib.GlobalWorkerOptions.workerSrc = CONFIG.pdfWorker;
             }
+            
+            // Verifica persistência da Chave de Acesso
             if (SECURITY.validate(localStorage.getItem(SECURITY.licenseStorageKey))) {
                 document.getElementById('lock-screen').classList.add('hidden');
             }
+            
+            // Verifica persistência da API Key
             const savedApiKey = localStorage.getItem(CONFIG.storageKey);
             if (savedApiKey) {
                 document.getElementById('custom-api-key').value = savedApiKey;
@@ -529,11 +566,6 @@
                 `"${c.summary.replace(/"/g, '""').replace(/\n/g, ' ')}"`
             ]);
             
-            /** * CORREÇÃO DE ACENTUAÇÃO:
-             * 1. Injetamos o BOM do UTF-8 (\uFEFF) no início da string. 
-             * Isso diz explicitamente ao Excel que o arquivo está em UTF-8.
-             * 2. Incluímos a instrução "sep=;" na primeira linha para que o Excel identifique o delimitador automaticamente.
-             */
             const csvContent = "\uFEFF" + `sep=${SEP}\n` + headers.join(SEP) + "\n" + rows.map(r => r.join(SEP)).join("\n");
             
             // Criamos o Blob especificando o charset
@@ -576,6 +608,7 @@
         const verifySaltBtn = document.getElementById('verify-salt-btn');
         const generatorControls = document.getElementById('generator-controls');
         const newUserId = document.getElementById('new-user-id');
+        const newUserDevice = document.getElementById('new-user-device');
         const generateKeyBtn = document.getElementById('generate-key-btn');
         const generatedKeyDisplay = document.getElementById('generated-key-display');
         const finalKey = document.getElementById('final-key');
@@ -603,11 +636,16 @@
             }
         };
 
-        // Gera a nova chave baseada no ID fornecido
+        // Gera a nova chave baseada no ID e (opcionalmente) no Device ID
         generateKeyBtn.onclick = () => {
             const id = newUserId.value.trim().toUpperCase();
+            const device = newUserDevice.value.trim().toUpperCase();
             if (!id) return;
-            const hash = CryptoJS.HmacSHA256(id, SECURITY.EXPECTED_SALT).toString().substring(0, 8).toUpperCase();
+            
+            // Se o admin preencheu o campo Device, amarra a chave àquele Device ID
+            const dataToHash = device ? (id + "-" + device) : id;
+            
+            const hash = CryptoJS.HmacSHA256(dataToHash, SECURITY.EXPECTED_SALT).toString().substring(0, 8).toUpperCase();
             finalKey.innerText = `XPTO-${id}-${hash}`;
             generatedKeyDisplay.classList.remove('hidden');
         };
