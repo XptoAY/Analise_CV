@@ -128,7 +128,7 @@
                     </div>
                 </div>
                 <!-- LOGO XPTOAY ADICIONADO AQUI -->
-                <img src="Logo_XptoAY_red.png" alt="XptoAY" class="h-12 w-12 md:h-14 md:w-14 rounded-full shadow-md border-2 border-white object-cover">
+                <img src="Logo_XptoAY_red.jpg" alt="Logo XptoAY" class="h-12 w-12 md:h-14 md:w-14 rounded-full shadow-md border-2 border-white object-cover">
             </div>
         </header>
 
@@ -209,7 +209,7 @@
         
         <footer class="text-center pb-4 pt-2">
             <p class="text-[10px] text-gray-400 font-medium tracking-widest">
-                &copy; 2026 - CV Analizer v1.0 - Todos os direitos reservados para <span class="text-blue-900 font-bold">XptoAY</span>
+                &copy; 2026 - CV Analizer v2.0 - Todos os direitos reservados para <span class="text-blue-900 font-bold">XptoAY</span>
             </p>
         </footer>
 
@@ -386,7 +386,11 @@
                     });
 
                     anon = anon.replace(/[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}/gi, '[E-MAIL]');
-                    anon = anon.replace(/(?:\+?55\s?)?(?:\(?\d{2}\)?\s?)?\d{4,5}[-\s]?\d{4}/g, '[TELEFONE]');
+                    anon = anon.replace(/(?:\+?55\s?)?(?:\(?\d{2}\)?\s?)?\d{4,5}[\s\-]*\d{4}/g, '[TELEFONE]');
+                    
+                    // Nova regra: Anonimiza CEP e blocos inteiros de Endereço
+                    anon = anon.replace(/\b\d{5}[\s\-]?\d{3}\b/g, '[CEP]');
+                    anon = anon.replace(/(?:Rua|Avenida|Av\.|Alameda|Travessa|Praça|Estrada|Rodovia|Logradouro)[^\[\]]{5,150}?(?:-[A-Z]{2}\b|\b(?:SP|RJ|MG|RS|PR|SC|BA|CE|PE|DF|GO|ES|MT|MS|PB|AM|RO|RN|AL|PI|MA|SE|AP|RR|TO|AC)\b|\[CEP\](?:[^\[\]]{0,50}?-[A-Z]{2}\b)?)/gi, '[ENDEREÇO]');
                     
                     let words = anon.trim().split(/\s+/);
                     if (words.length > 5) {
