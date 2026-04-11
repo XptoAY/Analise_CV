@@ -375,6 +375,8 @@
                     }
                     
                     let anon = text;
+                    
+                    // 1. Nomes (pelo nome do arquivo)
                     const fileNameClean = currentFilename.replace(/\.[^/.]+$/, "").replace(/[^a-zA-Z0-9]/g, " ");
                     const nameParts = fileNameClean.split(/\s+/).filter(p => p.length > 2);
 
@@ -385,12 +387,25 @@
                         }
                     });
 
+                    // 2. Email e Telefone
                     anon = anon.replace(/[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}/gi, '[E-MAIL]');
                     anon = anon.replace(/(?:\+?55\s?)?(?:\(?\d{2}\)?\s?)?\d{4,5}[\s\-]*\d{4}/g, '[TELEFONE]');
                     
-                    // Nova regra: Anonimiza CEP e blocos inteiros de Endereço
+                    // 3. Data de Nascimento (Restaurado e expandido para o padrão da imagem)
+                    anon = anon.replace(/(?:Data de Nascimento|Nascimento|Data Nasc\.|Nasc\.|D\.N\.)(?:\s*:|-)?\s*\d{2}[\/\-]\d{2}[\/\-]\d{4}/gi, '[DATA_NASC]');
+                    anon = anon.replace(/\b\d{2}[\/\-]\d{2}[\/\-]\d{4}\b/g, '[DATA_NASC]');
+                    
+                    // 4. CEP
                     anon = anon.replace(/\b\d{5}[\s\-]?\d{3}\b/g, '[CEP]');
-                    anon = anon.replace(/(?:Rua|Avenida|Av\.|Alameda|Travessa|Praça|Estrada|Rodovia|Logradouro)[^\[\]]{5,150}?(?:-[A-Z]{2}\b|\b(?:SP|RJ|MG|RS|PR|SC|BA|CE|PE|DF|GO|ES|MT|MS|PB|AM|RO|RN|AL|PI|MA|SE|AP|RR|TO|AC)\b|\[CEP\](?:[^\[\]]{0,50}?-[A-Z]{2}\b)?)/gi, '[ENDEREÇO]');
+                    
+                    // 5. REGEX DE ENDEREÇO AGRESSIVO E INTELIGENTE
+                    // Engloba a Rua, Avenida, etc e "come" todo o texto até encontrar a próxima marcação comum (Lookahead Positivo)
+                    const addressRegex = /(?:Endere[çc]o|Rua|Avenida|Av\.|Alameda|Travessa|Pra[çc]a|Estrada|Rodovia|R\.|Largo|Via|Viela)(?:\s*:)?\s+[\s\S]{5,150}?(?=\b(?:Casada|Casado|Solteira|Solteiro|Divorciada|Divorciado|Vi[úu]va|Vi[úu]vo|Brasileira|Brasileiro|Nacionalidade|Data|Nascimento|Email|E-mail|Celular|Telefone|Tel|Objetivo|Idade|\d{2}\s*anos|Experi[êe]ncia|Forma[çc][ãa]o)\b|\[E-MAIL\]|\[TELEFONE\]|\[DATA_NASC\]|$)/gi;
+                    anon = anon.replace(addressRegex, '[ENDEREÇO] ');
+                    
+                    // 6. REGEX DE BAIRRO RESIDUAL (Se sobrar algo, como no caso do Parque João Ramalho solto)
+                    const neighborhoodRegex = /(?:Bairro|Vila|Jardim|Parque|Conjunto|Residencial|Setor|Loteamento|Distrito)\s+[A-Za-zÀ-ÿ0-9\s]+?(?=\b(?:Casada|Casado|Solteira|Solteiro|Divorciada|Divorciado|Vi[úu]va|Vi[úu]vo|Brasileira|Brasileiro|Nacionalidade|Data|Nascimento|Email|E-mail|Celular|Telefone|Tel|Objetivo|Idade|\d{2}\s*anos|Experi[êe]ncia|Forma[çc][ãa]o)\b|\[E-MAIL\]|\[TELEFONE\]|\[DATA_NASC\]|$|-|–|—|,)/gi;
+                    anon = anon.replace(neighborhoodRegex, '[BAIRRO] ');
                     
                     let words = anon.trim().split(/\s+/);
                     if (words.length > 5) {
